@@ -79,7 +79,7 @@ export const cases = [
     code: "ECHO-A",
     culpritId: "mina",
     motiveId: "protect",
-    keyEvidenceIds: ["mina-badge", "mina-alibi", "mina-phrase"],
+    keyEvidenceIds: ["mina-alibi", "mina-phrase", "mina-confrontation"],
     resolution:
       "Mina staged a break-room alibi, used her legitimate archive access, and erased ECHO to keep non-consensual biometric data away from the investors.",
     locationEvidence: {
@@ -109,7 +109,7 @@ export const cases = [
       mina: {
         id: "mina-statement",
         title: "Mina's Statement",
-        body: "Mina says she remained in the break room from 10:12 until lockdown.",
+        body: "Mina says she entered the break room at 10:12 and remained there until lockdown ended at 10:26.",
       },
       jon: {
         id: "jon-build",
@@ -127,20 +127,46 @@ export const cases = [
         body: "Owen's controller stream is continuous and physically signed by the booth console.",
       },
     },
+    timeline: {
+      "local-wipe": { start: "22:17", status: "verified" },
+      "mina-badge": { start: "22:16", status: "verified" },
+      "clean-hatch": { start: "22:05", end: "22:26", status: "verified" },
+      "mina-alibi": { start: "22:12", end: "22:26", status: "verified" },
+      "mina-phrase": { start: "22:10", status: "verified" },
+      "mina-statement": { start: "22:12", end: "22:26", status: "claimed" },
+      "jon-build": { start: "22:05", end: "22:21", status: "verified" },
+      "rhea-call": { start: "22:13", end: "22:20", status: "verified" },
+      "owen-session": { start: "22:09", end: "22:20", status: "verified" },
+    },
+    contradiction: {
+      id: "mina-breakroom-alibi",
+      suspectId: "mina",
+      prerequisiteIds: ["mina-statement", "mina-alibi"],
+      title: "The break-room alibi is staged",
+      body: "Mina says she remained in the break room, but the camera recorded only a mug after 10:12.",
+      prompt:
+        "You said you never left the break room. Where were you at 10:16?",
+      confrontation: {
+        id: "mina-confrontation",
+        title: "Mina Breaks Her Alibi",
+        body: "Mina admits leaving the mug for the camera, opening the archive at 10:16, and removing the drive to keep the biometric model from being restored.",
+        timeline: { start: "22:16", end: "22:19", status: "admitted" },
+      },
+    },
   },
   {
     id: "echo-b",
     code: "ECHO-B",
     culpritId: "jon",
     motiveId: "coverup",
-    keyEvidenceIds: ["jon-script", "jon-reboot", "jon-ledger"],
+    keyEvidenceIds: ["jon-script", "jon-ledger", "jon-confrontation"],
     resolution:
       "Jon copied successful values from an old trial. When the demo threatened to expose the fraud, he wiped the dataset and removed its only clean backup.",
     locationEvidence: {
       control: {
         id: "jon-script",
-        title: "Signed Recovery Script",
-        body: "The wipe utility was compiled and cryptographically signed by Jon's build account at 9:48 tonight.",
+        title: "Signed Utility and Uptime Record",
+        body: "The wipe utility was compiled and signed by Jon's account at 10:08. UPS and uptime records run continuously through the incident; no reboot occurred.",
       },
       archive: { id: "empty-cradle", ...shared.archive },
       booth: {
@@ -156,7 +182,7 @@ export const cases = [
       office: {
         id: "failed-demo",
         title: "Demo Quality Report",
-        body: "Jon received notice at 9:35 that tomorrow's live run would reveal discrepancies in his reported results.",
+        body: "Jon received notice at 10:06 that tomorrow's live run would reveal discrepancies in his reported results.",
       },
     },
     interviews: {
@@ -167,8 +193,8 @@ export const cases = [
       },
       jon: {
         id: "jon-reboot",
-        title: "Impossible Reboot",
-        body: "Jon claims he rebooted the build server at 10:17. UPS and uptime records prove no reboot occurred.",
+        title: "Jon's Reboot Claim",
+        body: "Jon says a failed build forced him to reboot the server at 10:17 and that he remained at its console until it completed.",
       },
       rhea: {
         id: "rhea-demo",
@@ -181,13 +207,39 @@ export const cases = [
         body: "The booth camera and controller stream both show Owen testing through 10:20.",
       },
     },
+    timeline: {
+      "jon-script": { start: "22:08", status: "verified" },
+      "empty-cradle": { start: "22:19", status: "verified" },
+      "jon-ledger": { start: "22:11", status: "verified" },
+      "mina-meeting": { start: "22:14", end: "22:22", status: "verified" },
+      "failed-demo": { start: "22:06", status: "verified" },
+      "mina-objection": { start: "22:14", end: "22:22", status: "verified" },
+      "jon-reboot": { start: "22:17", status: "claimed" },
+      "rhea-demo": { start: "22:11", end: "22:24", status: "verified" },
+      "owen-camera": { start: "22:09", end: "22:20", status: "verified" },
+    },
+    contradiction: {
+      id: "jon-impossible-reboot",
+      suspectId: "jon",
+      prerequisiteIds: ["jon-reboot", "jon-script"],
+      title: "The server never rebooted",
+      body: "Jon claims he stayed at a rebooting server, but uninterrupted uptime proves that reboot never happened.",
+      prompt:
+        "The server never restarted. What were you actually doing at 10:17?",
+      confrontation: {
+        id: "jon-confrontation",
+        title: "Jon Admits the Maintenance Session",
+        body: "Jon admits using the maintenance session to run his signed wipe utility and taking the clean master before a live comparison exposed his altered results.",
+        timeline: { start: "22:17", end: "22:19", status: "admitted" },
+      },
+    },
   },
   {
     id: "echo-c",
     code: "ECHO-C",
     culpritId: "rhea",
     motiveId: "sale",
-    keyEvidenceIds: ["rhea-key", "rhea-contract", "rhea-courier"],
+    keyEvidenceIds: ["rhea-key", "rhea-contract", "rhea-confrontation"],
     resolution:
       "Rhea used her mechanical override to avoid the badge log, wiped the live copy, and planned to hand the unique master drive to a buyer after lockdown.",
     locationEvidence: {
@@ -226,13 +278,39 @@ export const cases = [
       },
       rhea: {
         id: "rhea-courier",
-        title: "Courier Booking",
-        body: "Rhea denies planning a delivery, but a 10:30 pickup under her conference alias lists “encrypted media.”",
+        title: "Rhea's Statement",
+        body: "Rhea says she has no buyer and arranged no pickup for ECHO's master drive during lockdown.",
       },
       owen: {
         id: "owen-grievance",
         title: "Owen's Statement",
         body: "Owen threatened to expose ECHO, but his full session recording has no gaps or loops.",
+      },
+    },
+    timeline: {
+      "local-wipe": { start: "22:17", status: "verified" },
+      "rhea-key": { start: "22:18", status: "inferred" },
+      "normal-session": { start: "22:09", end: "22:20", status: "verified" },
+      "jon-medical": { start: "22:15", end: "22:20", status: "verified" },
+      "rhea-contract": { start: "22:08", status: "verified" },
+      "mina-key": { start: "22:18", status: "inferred" },
+      "jon-burn": { start: "22:15", end: "22:20", status: "verified" },
+      "rhea-courier": { start: "22:05", end: "22:26", status: "claimed" },
+      "owen-grievance": { start: "22:09", end: "22:20", status: "verified" },
+    },
+    contradiction: {
+      id: "rhea-buyer-denial",
+      suspectId: "rhea",
+      prerequisiteIds: ["rhea-courier", "rhea-contract"],
+      title: "The buyer denial is false",
+      body: "Rhea denies having a buyer, but the addendum pays her for delivering this exact drive.",
+      prompt:
+        "If there is no buyer, why did you print this delivery contract at 10:08?",
+      confrontation: {
+        id: "rhea-confrontation",
+        title: "Alias Courier Booking",
+        body: "The contract's delivery code exposes a concealed 10:26 curbside pickup under Rhea's conference alias, marked “encrypted media.”",
+        timeline: { start: "22:23", end: "22:26", status: "verified" },
       },
     },
   },
@@ -241,7 +319,7 @@ export const cases = [
     code: "ECHO-D",
     culpritId: "owen",
     motiveId: "expose",
-    keyEvidenceIds: ["owen-loop", "owen-dust", "owen-press"],
+    keyEvidenceIds: ["owen-loop", "owen-dust", "owen-confrontation"],
     resolution:
       "Owen looped his test recording, crossed through the service hatch, and took the master drive as physical proof for journalists.",
     locationEvidence: {
@@ -287,6 +365,32 @@ export const cases = [
         id: "owen-denial",
         title: "Owen's Statement",
         body: "Owen insists he never left the booth and points to his continuous recording as proof.",
+      },
+    },
+    timeline: {
+      "local-wipe": { start: "22:17", status: "verified" },
+      "owen-dust": { start: "22:18", end: "22:19", status: "inferred" },
+      "owen-loop": { start: "22:13", end: "22:20", status: "verified" },
+      "mina-jon": { start: "22:15", end: "22:21", status: "verified" },
+      "owen-press": { start: "22:10", status: "verified" },
+      "mina-argument": { start: "22:15", end: "22:21", status: "verified" },
+      "jon-argument": { start: "22:15", end: "22:21", status: "verified" },
+      "rhea-recording": { start: "22:11", end: "22:24", status: "verified" },
+      "owen-denial": { start: "22:09", end: "22:20", status: "claimed" },
+    },
+    contradiction: {
+      id: "owen-looped-alibi",
+      suspectId: "owen",
+      prerequisiteIds: ["owen-denial", "owen-loop"],
+      title: "The booth alibi is a recording loop",
+      body: "Owen cites a continuous playtest as proof, but its repeating checksum shows it was playback.",
+      prompt:
+        "Your controller checksum repeats every 90 seconds. Where did you go?",
+      confrontation: {
+        id: "owen-confrontation",
+        title: "Owen Admits the Hatch Route",
+        body: "Owen admits starting the loop at 10:13, crossing the service hatch, and reaching the archive before the drive came free at 10:19.",
+        timeline: { start: "22:13", end: "22:19", status: "admitted" },
       },
     },
   },
