@@ -1,8 +1,13 @@
 import { cases, casesById, locations, motives, suspects } from "./cases.js";
 import {
+  canAccuse,
   createSession,
   enterAccusation,
   evaluateAccusation,
+  getConfrontationAvailability,
+  getEvidenceTimeline,
+  leaveAccusation,
+  performConfrontation,
   performInvestigation,
   requestHint,
 } from "./engine.js";
@@ -91,7 +96,7 @@ function renderHome() {
     element(
       "p",
       "lead",
-      "At 10:20 p.m., ECHO's behavioral dataset was wiped and its encrypted master drive vanished. Four people are trapped inside the studio. Search the scene, challenge their stories, and prove your accusation before lockdown ends.",
+      "By 10:20 p.m., ECHO's behavioral dataset had been wiped and its encrypted master drive was gone. Four people are trapped inside the studio. Search the scene, challenge their stories, and prove your accusation before lockdown ends.",
     ),
   );
   const stats = element("div", "stats");
@@ -131,7 +136,7 @@ function renderBriefing() {
   );
   const rules = element("div", "notice");
   rules.textContent =
-    "You have 12 actions. Search locations or interview suspects, then accuse one person, choose their motive, and support the charge with exactly two decisive clues.";
+    "You have 12 actions. Build the incident timeline, expose a contradiction, and spend one action confronting the suspect. Only then can you accuse one person and support the charge with exactly two decisive clues.";
   fragment.append(rules, element("h2", "", "Persons of interest"));
   const grid = element("div", "briefing-grid");
   suspects.forEach((suspect) => {
@@ -168,6 +173,97 @@ function renderActionCard(title, detail, action, completed) {
   control.disabled = completed || session.actionsLeft === 0;
   card.append(copy, control);
   return card;
+}
+
+function formatTime(time) {
+  const [hour, minute] = time.split(":").map(Number);
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${String(minute).padStart(2, "0")} ${hour >= 12 ? "p.m." : "a.m."}`;
+}
+
+function timelineLabel(timeline) {
+  const start = formatTime(timeline.start);
+  return timeline.end && timeline.end !== timeline.start
+    ? `${start}–${formatTime(timeline.end)}`
+    : start;
+}
+
+function sourceLabel(evidence) {
+  if (evidence.source === "location") return "Scene evidence";
+  if (evidence.source === "interview") {
+    const suspect = suspects.find((item) => item.id === evidence.sourceId);
+    return `Interview with ${suspect?.name || "suspect"}`;
+  }
+  return "Confrontation evidence";
+}
+
+function renderContradiction(caseData) {
+  const section = element("section", "contradiction-section");
+  section.append(element("h3", "", "Contradiction"));
+  const detected = session.resolvedContradictionIds.includes(
+    caseData.contradiction.id,
+  );
+  if (!detected) {
+    section.append(
+      element(
+        "p",
+        "empty",
+        "No contradiction exposed yet. Compare statements with scene evidence.",
+      ),
+    );
+    return section;
+  }
+  const card = element("article", "contradiction-card");
+  card.append(
+    element("p", "status-label", "Contradiction found"),
+    element("h4", "", caseData.contradiction.title),
+    element("p", "", caseData.contradiction.body),
+  );
+  section.append(card);
+  return section;
+}
+
+function renderTimeline() {
+  const section = element("section", "timeline-section");
+  section.append(element("h3", "", "Evidence timeline"));
+  const timeline = getEvidenceTimeline(session);
+  if (!timeline.length) {
+    section.append(
+      element(
+        "p",
+        "empty",
+        "No evidence logged yet. Investigate a location or interview a suspect.",
+      ),
+    );
+    return section;
+  }
+  const list = element("ol", "timeline-list");
+  timeline.forEach((evidence) => {
+    const item = element("li", "timeline-item");
+    const article = element("article", "evidence-card");
+    const heading = element("h4", "", evidence.title);
+    heading.id = `evidence-${evidence.id}`;
+    heading.tabIndex = -1;
+    const metadata = element(
+      "p",
+      "timeline-meta",
+      `${timelineLabel(evidence.timeline)} · ${evidence.timeline.status} · ${sourceLabel(evidence)}`,
+    );
+    const time = document.createElement("time");
+    time.dateTime = evidence.timeline.start;
+    time.textContent = timelineLabel(evidence.timeline);
+    metadata.replaceChildren(
+      time,
+      document.createTextNode(
+        ` · ${evidence.timeline.status} · ${sourceLabel(evidence)}`,
+      ),
+    );
+    article.append(metadata, heading, element("p", "", evidence.body));
+    item.append(article);
+    list.append(item);
+  });
+  section.append(list);
+  return section;
 }
 
 function renderInvestigation() {
@@ -227,6 +323,41 @@ function renderInvestigation() {
     );
   });
   leads.append(interviewList);
+  const confrontation = element("section", "confrontation-panel");
+  confrontation.append(element("h3", "", "Confront the contradiction"));
+  const availability = getConfrontationAvailability(session, caseData);
+  const suspect = suspects.find(
+    (item) => item.id === caseData.contradiction.suspectId,
+  );
+  if (availability.status === "available") {
+    confrontation.append(
+      element("p", "status-label", "Available — contradiction found"),
+      element("p", "", caseData.contradiction.prompt),
+      button(
+        `Confront ${suspect.name} (costs 1)`,
+        `confront:${suspect.id}`,
+        "button confrontation-button",
+      ),
+    );
+  } else if (availability.status === "completed") {
+    confrontation.append(
+      element("p", "status-label completed", "Confrontation complete"),
+      element(
+        "p",
+        "",
+        `${suspect.name}'s revised account is logged in the timeline.`,
+      ),
+    );
+  } else {
+    confrontation.append(
+      element(
+        "p",
+        "locked-status",
+        "Locked — collect both sides of the suspect's contradiction.",
+      ),
+    );
+  }
+  leads.append(confrontation);
   const leadActions = element("div", "button-row");
   const hintButton = button(
     session.hintUsed ? "Hint used" : "Request a hint (costs 2)",
@@ -234,44 +365,54 @@ function renderInvestigation() {
     "button secondary",
   );
   hintButton.disabled = session.hintUsed || session.actionsLeft < 2;
-  leadActions.append(hintButton, button("Make an accusation", "accuse"));
+  const accuseButton = button("Make an accusation", "accuse");
+  accuseButton.disabled = !canAccuse(session, caseData);
+  leadActions.append(hintButton, accuseButton);
   leads.append(leadActions);
+  if (!canAccuse(session, caseData)) {
+    leads.append(
+      element(
+        "p",
+        "locked-status",
+        "Accusation locked — expose the lie and complete the confrontation first.",
+      ),
+    );
+  }
 
   const casebook = element("section", "panel casebook");
   casebook.append(
     element("p", "eyebrow", `${session.evidence.length} clues logged`),
     element("h2", "", "Casebook"),
   );
-  const evidenceList = element("div", "evidence-list");
-  if (!session.evidence.length) {
-    evidenceList.append(
-      element(
-        "p",
-        "empty",
-        "Your casebook is empty. Follow a lead to collect evidence.",
-      ),
-    );
-  } else {
-    [...session.evidence].reverse().forEach((evidence) => {
-      const card = element("article", "evidence-card");
-      card.append(
-        element(
-          "p",
-          "source",
-          evidence.source === "location"
-            ? "Scene evidence"
-            : "Interview record",
-        ),
-        element("h3", "", evidence.title),
-        element("p", "", evidence.body),
-      );
-      evidenceList.append(card);
-    });
-  }
-  casebook.append(evidenceList);
+  casebook.append(renderContradiction(caseData), renderTimeline());
   grid.append(leads, casebook);
   fragment.append(grid);
   return fragment;
+}
+
+function renderExhausted() {
+  const section = element("section", "panel result");
+  section.append(
+    element("p", "eyebrow", "Investigation exhausted"),
+    element("h1", "", "The lie remains unproven."),
+    element(
+      "p",
+      "error",
+      "You used every action before completing the confrontation. Without an exposed lie and revised account, the case cannot support an accusation.",
+    ),
+    element(
+      "p",
+      "",
+      "Start another investigation and reserve one action for the confrontation.",
+    ),
+  );
+  const actions = element("div", "button-row");
+  actions.append(
+    button("Restart with a new variant", "start"),
+    button("Return to title", "home", "button secondary"),
+  );
+  section.append(actions);
+  return section;
 }
 
 function labeledChoice(type, name, value, title, detail) {
@@ -376,6 +517,7 @@ function renderResult() {
     `Culprit: ${result.correctSuspect ? "correct" : `incorrect — ${culprit.name}`}`,
     `Motive: ${result.correctMotive ? "correct" : `incorrect — ${motive.label}`}`,
     `Decisive evidence submitted: ${result.decisiveEvidence} of 2 required`,
+    `Confrontation evidence submitted: ${result.includesConfrontation ? "yes" : "no"}`,
     `Actions used: ${result.actionsUsed} of 12`,
     `All three decisive clues found: ${result.allKeyEvidence ? "yes" : "no"}`,
     `Hint used: ${session.hintUsed ? "yes" : "no"}`,
@@ -396,6 +538,7 @@ function render(focusMain = false) {
   else if (screen === "investigating") content = renderInvestigation();
   else if (screen === "accusing") content = renderAccusation();
   else if (screen === "resolved") content = renderResult();
+  else if (screen === "exhausted") content = renderExhausted();
   else content = renderHome();
   app.replaceChildren(content);
   if (focusMain) app.focus();
@@ -418,33 +561,69 @@ app.addEventListener("click", (event) => {
     announce("Investigation started. Twelve actions remaining.");
   } else if (action === "search" || action === "interview") {
     const kind = action === "search" ? "location" : "interview";
+    const previousContradictions = session.resolvedContradictionIds.length;
     const next = performInvestigation(session, currentCase(), kind, targetId);
     if (next !== session) {
       session = next;
       const found = session.evidence.at(-1);
-      notice = `Evidence logged: ${found.title}`;
+      const contradictionFound =
+        session.resolvedContradictionIds.length > previousContradictions;
+      notice = contradictionFound
+        ? `Evidence logged: ${found.title}. Contradiction found; confrontation unlocked.`
+        : `Evidence logged: ${found.title}`;
       announce(notice);
       if (session.phase === "accusing") {
         screen = "accusing";
         announce("No actions remain. Present your accusation.");
+      } else if (session.phase === "exhausted") {
+        screen = "exhausted";
       }
     }
     render();
+    if (screen === "investigating") {
+      document
+        .querySelector(`#evidence-${session.evidence.at(-1)?.id}`)
+        ?.focus();
+    }
+  } else if (action === "confront") {
+    const next = performConfrontation(session, currentCase());
+    if (next !== session) {
+      session = next;
+      const found = session.evidence.at(-1);
+      notice = `${found.title}. New evidence added to the timeline.`;
+      if (session.phase === "accusing") screen = "accusing";
+      announce(
+        session.phase === "accusing"
+          ? "Confrontation complete. No actions remain; present your accusation."
+          : notice,
+      );
+      render(session.phase === "accusing");
+      if (screen === "investigating") {
+        document.querySelector(`#evidence-${found.id}`)?.focus();
+      }
+    }
   } else if (action === "hint") {
     const outcome = requestHint(session, currentCase());
     session = outcome.session;
     notice = outcome.hint || "";
     if (session.phase === "accusing") screen = "accusing";
+    else if (session.phase === "exhausted") screen = "exhausted";
     announce(notice);
     render();
   } else if (action === "accuse") {
-    session = enterAccusation(session);
-    screen = "accusing";
-    render(true);
+    const next = enterAccusation(session, currentCase());
+    if (next !== session) {
+      session = next;
+      screen = "accusing";
+      render(true);
+    }
   } else if (action === "return") {
-    session = { ...session, phase: "investigating" };
-    screen = "investigating";
-    render(true);
+    const next = leaveAccusation(session);
+    if (next !== session) {
+      session = next;
+      screen = "investigating";
+      render(true);
+    }
   } else if (action === "reset") {
     if (window.confirm("Clear all solved cases and best scores?")) {
       progress = { solved: [], bestScores: {} };
