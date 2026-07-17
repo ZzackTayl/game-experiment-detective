@@ -1,0 +1,14 @@
+{
+  "name": "the-bell-that-drowned",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "node tools/serve.mjs",
+    "test": "node --test",
+    "check": "node --check public/app/main.js && node --test"
+  }
+}
