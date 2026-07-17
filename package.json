@@ -1,10 +1,14 @@
 {
-  "name": "game-experiment-detective",
-  "version": "1.0.0",
+  "name": "the-bell-that-drowned",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "start": "node server.mjs",
-    "test": "node --check js/main.js && node --check js/engine.js && node --test"
+    "dev": "node tools/serve.mjs",
+    "test": "node --test",
+    "check": "node --check public/app/main.js && node --test"
   }
 }
