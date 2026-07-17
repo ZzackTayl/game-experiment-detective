@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Investigate a sabotaged game experiment in a replayable browser mystery."
+    />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'"
+    />
+    <title>The Vanishing Variable — Detective Game</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="js/main.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#app">Skip to case file</a>
+    <header class="site-header">
+      <a class="brand" href="#" data-action="home" aria-label="The Vanishing Variable home">
+        <span aria-hidden="true">◆</span>
+        The Vanishing Variable
+      </a>
+      <p>Game Experiment Detective</p>
+    </header>
+    <main id="app" tabindex="-1">
+      <noscript>
+        <section class="panel">
+          <h1>JavaScript is required</h1>
+          <p>
+            This interactive case file needs JavaScript enabled to track your
+            investigation.
+          </p>
+        </section>
+      </noscript>
+    </main>
+    <div
+      id="announcer"
+      class="sr-only"
+      aria-live="polite"
+      aria-atomic="true"
+    ></div>
+  </body>
+</html>
