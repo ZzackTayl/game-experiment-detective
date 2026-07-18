@@ -63,7 +63,9 @@ may be `verified`, `claimed`, `inferred`, or `admitted`.
   without stealing focus.
 - Confrontations use native buttons with the suspect's name in the visible label.
 - Locked and completed states use text rather than color alone.
-- Newly produced confrontation evidence receives programmatic focus.
+- Newly produced confrontation evidence receives programmatic focus when the
+  investigation screen remains active. A final-action confrontation transitions
+  directly to accusation, focuses the main region, and announces the transition.
 - The timeline remains one-dimensional and readable at 320 CSS pixels, with CSS
   disabled, in forced-colors mode, and with reduced motion enabled.
 
@@ -78,5 +80,5 @@ may be `verified`, `claimed`, `inferred`, or `admitted`.
 - Timeline sorting is deterministic and does not mutate session or case data.
 - Every evidence reference and timeline value passes content validation.
 - The complete flow works with keyboard controls and has no browser console errors.
-- Investigation, timeline, confrontation, accusation, and result screens have no
-  horizontal page overflow at 320 pixels.
+- The investigation screen and its timeline and confrontation regions, plus the
+  accusation and result screens, have no horizontal page overflow at 320 pixels.
