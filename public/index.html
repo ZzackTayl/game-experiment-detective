@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="The Bell That Drowned, a midnight records-desk detective game."
+    />
+    <meta name="theme-color" content="#071116" />
+    <title>The Bell That Drowned</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#app">Skip to case file</a>
+
+    <div class="atmosphere" aria-hidden="true">
+      <div class="atmosphere__grid"></div>
+      <div class="atmosphere__beam"></div>
+      <div class="atmosphere__rain"></div>
+    </div>
+
+    <header class="site-header">
+      <div class="brand" aria-label="The Bell That Drowned">
+        <span class="brand-mark" aria-hidden="true">B</span>
+        <span class="brand-copy">
+          <span class="brand-kicker">Case 11 · Saltmere</span>
+          <span class="brand-title">The Bell That Drowned</span>
+        </span>
+      </div>
+      <p id="save-status" role="status" aria-live="polite">Case not started</p>
+    </header>
+
+    <main id="app" tabindex="-1">
+      <noscript>
+        <section class="screen intake" aria-labelledby="no-script-title">
+          <p class="eyebrow">Midnight Records Desk</p>
+          <h1 id="no-script-title">
+            JavaScript is required to open this case.
+          </h1>
+          <p>
+            Enable JavaScript and reload the page to investigate the drowned
+            bell of Saltmere.
+          </p>
+        </section>
+      </noscript>
+    </main>
+
+    <div id="live-region" class="sr-only" aria-live="polite"></div>
+    <script type="module" src="./app/main.js"></script>
+  </body>
+</html>
